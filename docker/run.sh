@@ -36,11 +36,13 @@ set +e
 function show_help() {
   echo $'\nUsage:\t run.sh [OPTIONS] \n
   Options:\n
-  \t-i --image_name\t\t Name of the image to be run (default ros2_kilted_eta_gz).\n
-  \t-c --container_name\t Name of the container(default ros2_kilted_eta_gz_container).\n
+  \t-i --image_name\t\t Name of the image to be run (default ros2_<ros_distro>_eta_gz).\n
+  \t-c --container_name\t Name of the container(default ros2_<ros_distro>_eta_gz_container).\n
+  \t-d --ros_distro\t\t ROS 2 distro to use: kilted or jazzy (default kilted).\n
   \t--use_nvidia\t\t Use nvidia runtime.\n
   Examples:\n
   \trun.sh\n
+  \trun.sh --ros_distro jazzy\n
   \trun.sh --image_name custom_image_name --container_name custom_container_name \n'
 }
 
@@ -70,6 +72,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -i|--image_name) IMAGE_NAME="${2}"; shift ;;
         -c|--container_name) CONTAINER_NAME="${2}"; shift ;;
+        -d|--ros_distro) ROS_DISTRO="${2}"; shift ;;
         -h|--help) show_help ; exit 1 ;;
         --use_nvidia) NVIDIA_FLAGS="--gpus=all -e NVIDIA_DRIVER_CAPABILITIES=all" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
@@ -78,9 +81,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Update the arguments to default values if needed.
-
-IMAGE_NAME=${IMAGE_NAME:-ros2_kilted_eta_gz}
-CONTAINER_NAME=${CONTAINER_NAME:-ros2_kilted_eta_gz_container}
+ROS_DISTRO=${ROS_DISTRO:-kilted}
+IMAGE_NAME=${IMAGE_NAME:-ros2_${ROS_DISTRO}_eta_gz}
+CONTAINER_NAME=${CONTAINER_NAME:-ros2_${ROS_DISTRO}_eta_gz_container}
 
 SSH_PATH=/home/$USER/.ssh
 WORKSPACE_SRC_CONTAINER=/home/$(whoami)/ws/src/$REPOSITORY_FOLDER_NAME

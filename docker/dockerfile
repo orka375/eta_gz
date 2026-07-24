@@ -50,10 +50,11 @@ RUN sudo apt-get update && sudo apt-get upgrade -y && rosdep update
 ######################
 RUN mkdir -p /home/$USER/ros_ws/src /home/$USER/ros_ws/build /home/$USER/ros_ws/install /home/$USER/ros_ws/log
 WORKDIR /home/$USER/ros_ws/src
+
 RUN git clone https://github.com/orka375/eta_gz.git
 
 WORKDIR /home/$USER/ros_ws/
-RUN . /opt/ros/${ROS_DISTRO}/setup.sh && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --build-base /home/$USER/ros_ws/build --install-base /home/$USER/ros_ws/install
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 
 
@@ -73,6 +74,7 @@ RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/openrobotics/models/t
 # 6) Bashrc
 ######################
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/$USER/.bashrc
+RUN echo "source /home/$USER/ros_ws/install/setup.bash" >> /home/$USER/.bashrc
 RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/$USER/.bashrc
 RUN echo "export ROS_DOMAIN_ID=1" >> /home/$USER/.bashrc
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc
@@ -86,8 +88,8 @@ RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
 ######################
 # 8) Workspace
 ######################
-RUN mkdir -p /home/$USER/ws/src
 
-WORKDIR /home/$USER/ws
+
+WORKDIR /home/$USER/ros_ws
 
 CMD ["/bin/bash"]
