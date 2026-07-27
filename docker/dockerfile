@@ -61,6 +61,9 @@ RUN git clone https://github.com/orka375/eta_gz.git
 WORKDIR /home/$USER/ros_ws/
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 
+RUN mkdir -p /home/$USER/ros_ws/src/Gz /home/$USER/ros_ws/build /home/$USER/ros_ws/install /home/$USER/ros_ws/log
+
+WORKDIR /home/$USER/ros_ws/src/Gz
 
 
 RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/OpenRobotics/models/officedesk"
@@ -74,16 +77,46 @@ RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/openrobotics/models/t
 RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/makerspet/models/tv_65in/1"
 RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/openrobotics/models/table/4"
 
+RUN cat <<'EOF' | sudo tee /usr/local/bin/setup_gz_models.sh >/dev/null
+#!/usr/bin/env bash
+set -euo pipefail
+
+MARKER_FILE="${HOME}/.cache/gz_models_bootstrapped"
+if [[ -f "${MARKER_FILE}" ]]; then
+	exit 0
+fi
+
+declare -a MODEL_URLS=(
+	"https://fuel.gazebosim.org/1.0/OpenRobotics/models/officedesk"
+	"https://fuel.gazebosim.org/1.0/OpenRobotics/models/officechair"
+	"https://fuel.gazebosim.org/1.0/OpenRobotics/models/diningtable"
+	"https://fuel.gazebosim.org/1.0/OpenRobotics/models/foodcourttable1"
+	"https://fuel.gazebosim.org/1.0/OpenRobotics/models/depot"
+)
+
+for model_url in "${MODEL_URLS[@]}"; do
+	gz fuel download --url "${model_url}" >/dev/null 2>&1 || true
+done
+
+mkdir -p "$(dirname "${MARKER_FILE}")"
+touch "${MARKER_FILE}"
+EOF
+RUN sudo chmod +x /usr/local/bin/setup_gz_models.sh
+
 
 ######################
 # 6) Bashrc
 ######################
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/$USER/.bashrc
-RUN echo "source /home/$USER/ros_ws/install/setup.bash" >> /home/$USER/.bashrc
+RUN echo 'if [ -f /home/$USER/ros_ws/install/setup.bash ]; then source /home/$USER/ros_ws/install/setup.bash; fi' >> /home/$USER/.bashrc
 RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/$USER/.bashrc
 RUN echo "export ROS_DOMAIN_ID=1" >> /home/$USER/.bashrc
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc
 RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
+RUN echo 'if [ -d /home/$USER/ros_ws/src/Robots/andino_gz/andino_gz/models ]; then export GZ_SIM_RESOURCE_PATH=/home/$USER/ros_ws/src/Robots/andino_gz/andino_gz/models${GZ_SIM_RESOURCE_PATH:+:${GZ_SIM_RESOURCE_PATH}}; fi' >> /home/$USER/.bashrc
+RUN echo 'if [ -d /home/$USER/ros_ws/src/Gz/eta_gz/models ]; then export GZ_SIM_RESOURCE_PATH=/home/$USER/ros_ws/src/Gz/eta_gz/models${GZ_SIM_RESOURCE_PATH:+:${GZ_SIM_RESOURCE_PATH}}; fi' >> /home/$USER/.bashrc
+RUN echo 'export IGN_GAZEBO_RESOURCE_PATH=${GZ_SIM_RESOURCE_PATH:-${IGN_GAZEBO_RESOURCE_PATH:-}}' >> /home/$USER/.bashrc
+RUN echo "bash /usr/local/bin/setup_gz_models.sh" >> /home/$USER/.bashrc
 
 ######################
 # 7) Pip
@@ -93,8 +126,6 @@ RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
 ######################
 # 8) Workspace
 ######################
-
-
-WORKDIR /home/$USER/ros_ws
+WORKDIR /home/$USER/ros_ws/src/Gz
 
 CMD ["/bin/bash"]
