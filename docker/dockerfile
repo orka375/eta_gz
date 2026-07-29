@@ -53,17 +53,15 @@ RUN git config --global credential.helper store
 RUN git config --global user.email "admin@docker"
 RUN git config --global user.name "admin"
 
-RUN mkdir -p /home/$USER/ros_ws/src /home/$USER/ros_ws/build /home/$USER/ros_ws/install /home/$USER/ros_ws/log
+RUN mkdir -p /home/$USER/ros_ws/src /home/$USER/ros_ws/build /home/$USER/ros_ws/install /home/$USER/ros_ws/log /home/$USER/ros_ws/mount
 WORKDIR /home/$USER/ros_ws/src
+
 
 RUN git clone https://github.com/orka375/eta_gz.git
 
 WORKDIR /home/$USER/ros_ws/
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 
-RUN mkdir -p /home/$USER/ros_ws/src/Gz /home/$USER/ros_ws/build /home/$USER/ros_ws/install /home/$USER/ros_ws/log
-
-WORKDIR /home/$USER/ros_ws/src/Gz
 
 
 RUN gz fuel download --url "https://fuel.gazebosim.org/1.0/OpenRobotics/models/officedesk"
